@@ -4,22 +4,33 @@
 #include <ctype.h>
 
 int main() {
-  int copy_chars = 0;
-  int copy_chars_strlen = 0;
-  FILE *wordlist = fopen("wordlist.txt", "r");
-  FILE *wordlist_parsed = fopen("wordlist_parsed.txt", "w");
-  char entry[99] = "";
-  char word_ending[99] = "";
-  char next_word[99] = "";
-  char last_word[99] = "";
+  int copy_chars = 0;  // Characters to copy from previous word
+  int copy_chars_strlen = 0;  // How long IN characters the copy characters specifier of each entry was
+  FILE *wordlist = fopen("wordlist.txt", "r");  // The input file
+  // FILE *wordlist_parsed = fopen("wordlist_parsed.txt", "w");
+  char entry[99] = "";  // Each line of the file at a time 
+  char word_ending[99] = "";  // The part of each entry that is the end of the new word
+  char next_word[99] = "";  // Each new word as it is parsed
+  char last_word[99] = "";  // Each previous parsed word
 
   // Repeat until we reach the end of the file
   while (feof(wordlist) == 0) {
 
     // Read another line
-
     fgets(entry, 99, wordlist);
-    // printf("ENTRY: %s\n", entry);
+
+    // Skip blank lines and the ending empty line
+    if (entry[0] == '\r' || entry[0] == '\n' || strlen(entry) == 0) {
+      continue;
+    }
+
+    // Remove trailing newline and carriage return for lines that aren't the last
+    while (entry[strlen(entry) - 1] == '\n' || entry[strlen(entry) - 1] == '\r') {
+      entry[strlen(entry) - 1] = '\0';
+    }
+
+    // printf("ENTRY: '%s'\n", entry);
+
     // Look for numbers at the beginning of the string
     copy_chars_strlen = 0;
     for (int i=0; i<strlen(entry) && isdigit(entry[i]); i++) {
@@ -38,24 +49,23 @@ int main() {
     for (int j=copy_chars_strlen; j<strlen(entry) && entry[j] != '\n'; j++) {
       word_ending[j - copy_chars_strlen] = entry[j];
     }
-    // word_ending[strlen(entry)] = '\0';
 
-    // printf("COPY CHARS: %d\tWORD ENDING: %s\n", copy_chars, word_ending);
+    // printf("COPY CHARS: %d\tWORD ENDING: '%s'\n", copy_chars, word_ending);
 
     // Do character copying
     if (copy_chars != 0) {
 
       // Erroneous presence of copy characters with nothing to copy
-      if (strlen(last_word) == 0) {
-        printf("ERROR: Copy characters was nonzero at start of file.\n");
-        printf("INFO: Ignoring.\n");
+      // The start of last_word is null terminator
+      if (*last_word == '\0') {
+        printf("WARNING: Copy characters was nonzero at start of file. Ignoring.\n");
       }
 
       // Not enough characters to copy
       else if (strlen(last_word) < copy_chars) {
         printf("ERROR: Entry '%s' has copy character characters quirement %d but previous entry '%s' is too short!",
                entry, copy_chars, last_word);
-        return 1;
+        exit(EXIT_FAILURE);
       }
 
       // All go for copy
@@ -73,12 +83,12 @@ int main() {
     printf("%s\n", next_word);
 
     // Reset stuff for next iteration
-    memset(last_word, 0, sizeof(last_word));
     strcpy(last_word, next_word);
-    memset(next_word, 0, sizeof(next_word));
-    memset(entry, 0, sizeof(entry));
-    memset(word_ending, 0, sizeof(word_ending));
+    memset(next_word, '\0', sizeof(next_word));
+    memset(entry, '\0', sizeof(entry));
+    memset(word_ending, '\0', sizeof(word_ending));
     // fgets(entry, 99, wordlist);
   }
-
+  
+  return 0;
 }
