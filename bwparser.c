@@ -12,10 +12,13 @@ int main() {
   char word_ending[99] = "";
   char next_word[99] = "";
   char last_word[99] = "";
-  fgets(entry, 99, wordlist);
 
-  // Repeat until the string value read into the buffer is empty
-  while (strlen(entry) > 0) {
+  // Repeat until we reach the end of the file
+  while (feof(wordlist) == 0) {
+
+    // Read another line
+
+    fgets(entry, 99, wordlist);
     // printf("ENTRY: %s\n", entry);
     // Look for numbers at the beginning of the string
     copy_chars_strlen = 0;
@@ -69,13 +72,13 @@ int main() {
     // Output
     printf("%s\n", next_word);
 
-    // For next iteration
+    // Reset stuff for next iteration
     memset(last_word, 0, sizeof(last_word));
     strcpy(last_word, next_word);
     memset(next_word, 0, sizeof(next_word));
     memset(entry, 0, sizeof(entry));
     memset(word_ending, 0, sizeof(word_ending));
-    fgets(entry, 99, wordlist);
+    // fgets(entry, 99, wordlist);
   }
 
 }
