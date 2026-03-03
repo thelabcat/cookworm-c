@@ -6,11 +6,16 @@ on:
   push:
     # branches: [ "master" ]
     tags: [ 'v*' ]  # Or '*' for any tag; adjust as needed
+    release:
+      types: [created]
   pull_request:
     branches: [ "master" ]
 
 jobs:
   build:
+    permissions:
+      contents: write
+
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -86,7 +91,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: bwparser-${{ matrix.os }}-${{matrix.c_compiler}}-${{ matrix.build_type }}
+        name: bwparser-${{ matrix.os }}-${{matrix.c_compiler}} #-${{ matrix.build_type }}
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/**/bwparser
           ${{ steps.strings.outputs.build-output-dir }}/**/bwparser.exe
@@ -97,6 +102,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ${{ steps.strings.outputs.build-output-dir }}/**/bwparser-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}
-          ${{ steps.strings.outputs.build-output-dir }}/**/bwparser-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}.exe
+          ${{ steps.strings.outputs.build-output-dir }}/**/bwparser-${{ matrix.os }}-${{ matrix.c_compiler }}
+          ${{ steps.strings.outputs.build-output-dir }}/**/bwparser-${{ matrix.os }}-${{ matrix.c_compiler }}.exe
         make_latest: "true"  # Optional: Mark this release as latest
