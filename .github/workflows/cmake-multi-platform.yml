@@ -96,6 +96,16 @@ jobs:
           ${{ steps.strings.outputs.build-output-dir }}/**/bwparser
           ${{ steps.strings.outputs.build-output-dir }}/**/bwparser.exe
 
+    # Both Grok-generated
+    - name: Rename Binary for Release (Linux)
+      if: runner.os == 'Linux' # startsWith(github.ref, 'refs/tags/') &&
+      run: mv ${{ steps.strings.outputs.build-output-dir }}/bwparser ${{ steps.strings.outputs.build-output-dir }}/bwparser-${{ matrix.os }}-${{ matrix.c_compiler }}
+
+    - name: Rename Binary for Release (Windows)
+      if: runner.os == 'Windows' #  startsWith(github.ref, 'refs/tags/') &&
+      shell: pwsh
+      run: Move-Item -Path ${{ steps.strings.outputs.build-output-dir }}\${{ matrix.build_type }}\bwparser.exe -Destination ${{ steps.strings.outputs.build-output-dir }}\bwparser-${{ matrix.os }}-${{ matrix.c_compiler }}.exe
+
     # Grok-generated
     - name: Upload to Release
       if: startsWith(github.ref, 'refs/tags/')  # Only run on tags
