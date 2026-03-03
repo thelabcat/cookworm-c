@@ -16,6 +16,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * Some code used from http://www.crasseux.com/books/ctutorial/argp-example.html
+ *
+ * S.D.G.
  */
 
 #include <stdio.h>
@@ -24,28 +28,113 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <argp.h>
 
 #define STR_SIZE 99
 
-void printhelp() {
-  // Print the program help and exit
-  printf("Cookworm-C BookWorm Parser - Parse and unparse the BookWorm Deluxe wordlist\n"
-         "\n"
-         "Usage: bwparser [-u] [infile.txt] [outfile.txt]\n"
-         "       bwparser -h\n"
-         "\n"
-         "Options:\n"
-         "\n"
-         "  -u\tChange into unparsing mode. Defaults to parsing.\n"
-         "  infile.txt\tThe text file to read from. Defaults to stdin.\n"
-         "  outfile.txt\tThe text file to write to. Defaults to stdout.\n"
-         "\n"
-         "  -h\tInstead of operating, print this help and exit.\n"
-         "\n"
-         "S.D.G.\n"
-  );
-  exit(EXIT_SUCCESS);
+const char *argp_program_version =
+"bwparser 1.0.0";
+
+const char *argp_program_bug_address =
+"<zargulthewizard@outlook.com>";
+
+/* This structure is used by main to communicate with parse_opt. */
+struct arguments
+{
+  FILE *infile;
+  FILE *outfile;
+  bool unparse;
+};
+
+/*
+ *  OPTIONS.  Field 1 in ARGP.
+ *  Order of fields: {NAME, KEY, ARG, FLAGS, DOC}.
+ */
+static struct argp_option options[] =
+{
+  {"unparse", 'u', 0, 0, "Use unparsing mode instead of parsing"},
+  {0},  // Terminates this structure, otherwise we get ghost options
+};
+
+
+/*
+ *  PARSER. Field 2 in ARGP.
+ *  Order of parameters: KEY, ARG, STATE.
+ */
+static error_t parse_opt(int key, char *arg, struct argp_state *state) {
+  struct arguments *arguments = state->input;
+
+  switch (key)
+  {
+    // Unparse mode set
+    case 'u':
+      arguments->unparse = true;
+      break;
+
+    // Positional arguments
+    case ARGP_KEY_ARG:
+      switch (state->arg_num) {
+        // Input file
+        case 0:
+          arguments->infile = fopen(arg, "r");
+          if (arguments->infile == NULL) {
+            fprintf(stderr, "Could not open input file '%s', error %d:\n\t'%s'\n",
+                    arg, errno, strerror(errno));
+            exit(EXIT_FAILURE);
+          }
+          break;
+
+        // Output file
+        case 1:
+          arguments->outfile = fopen(arg, "w");
+          if (arguments->outfile == NULL) {
+            fprintf(stderr, "Could not open output file '%s', error %d:\n\t'%s'\n",
+                    arg, errno, strerror(errno));
+            exit(EXIT_FAILURE);
+          }
+          break;
+
+        // Invalid number of positional arguments
+        default:
+          argp_usage(state);
+      }
+
+    // Reached the end of arguments, do wrap up
+    case ARGP_KEY_END:
+      // Nothing to do here, we don't need positional arguments
+      /*
+      if (state->arg_num < 2)
+      {
+        argp_usage (state);
+      }
+      */
+      break;
+
+    // Invalid argument
+    default:
+      return ARGP_ERR_UNKNOWN;
+  }
+  return 0;
 }
+
+/*
+ *  ARGS_DOC. Field 3 in ARGP.
+ *  A description of the non-option command-line arguments
+ *    that we accept.
+ */
+static char args_doc[] = "[INFILE] [OUTFILE]";
+
+/*
+ * DOC.  Field 4 in ARGP.
+ * Program documentation.
+ */
+static char doc[] =
+"Cookworm-C BookWorm Parser - Parse and unparse the BookWorm Deluxe wordlist";
+
+/*
+ *  The ARGP structure itself.
+ */
+static struct argp argp = {options, parse_opt, args_doc, doc};
 
 void parse(FILE *wordlist, FILE *output) {
   /* Parse a compressed wordlist into plain words.
@@ -225,82 +314,25 @@ void unparse(FILE *plainwords, FILE *wordlist) {
 int main(int argc, char *argv[]) {
   errno = 0;
 
-  bool unparse_mode = false;
-  FILE *infile = stdin;
-  FILE *outfile = stdout;
+  /* Set argument defaults */
+  struct arguments arguments;
+  arguments.unparse = false;
+  arguments.infile = stdin;
+  arguments.outfile = stdout;
 
-  // Parse all arguments
-  for (int i=0; i<argc; i++) {
-
-    // Skip the first option
-    if (i == 0) {
-      continue;
-    }
-
-    // Search through known flags, and lastly positional arguments
-    // unparse flag set
-    if (!strcmp(argv[i], "-u")) {
-      unparse_mode = true;
-    }
-
-    // print help and exit
-    else if (!strcmp(argv[i], "-h")) {
-      printhelp();
-    }
-
-    // not a known flag argument
-
-    // Unrecognized flag argument
-    else if (argv[i][0] == '-') {
-      fprintf(stderr, "Unrecognized option, '%s'\n", argv[i]);
-
-      // It is a lone hyphen
-      if (strlen(argv[i]) == 1) {
-        fprintf(stderr, "Did you know the program defaults to stdio?\n");
-      }
-
-      exit(EXIT_FAILURE);
-    }
-
-    // Positional arguments:
-
-    //infile is not set yet
-    else if (infile == stdin) {
-      infile = fopen(argv[i], "r");
-      if (infile == NULL) {
-        fprintf(stderr, "Could not open input file '%s', error %d:\n\t'%s'\n",
-                argv[i], errno, strerror(errno));
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    // outfile is not set yet
-    else if (outfile == stdout) {
-      outfile = fopen(argv[i], "w");
-      if (outfile == NULL) {
-        fprintf(stderr, "Could not open output file '%s', error %d:\n\t'%s'\n",
-                argv[i], errno, strerror(errno));
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    // both files are set, no recognized options
-    else {
-      fprintf(stderr, "Unrecognized positional option, '%s'\n", argv[i]);
-      exit(EXIT_FAILURE);
-    }
-  }
+  // Parse arguments
+  argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
   // Options are set, do our thing!
-  if (!unparse_mode) {
-    parse(infile, outfile);
+  if (arguments.unparse) {
+    unparse(arguments.infile, arguments.outfile);
   }
   else {
-    unparse(infile, outfile);
+    parse(arguments.infile, arguments.outfile);
   }
 
-  fclose(infile);
-  fclose(outfile);
+  fclose(arguments.infile);
+  fclose(arguments.outfile);
 
   return 0;
 }
