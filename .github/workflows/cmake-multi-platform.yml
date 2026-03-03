@@ -96,6 +96,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-        ${{ steps.strings.outputs.build-output-dir }}/**/cookworm-c-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}
-        ${{ steps.strings.outputs.build-output-dir }}/**/cookworm-c-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}.exe
+          ${{ steps.strings.outputs.build-output-dir }}/**/cookworm-c-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}
+          ${{ steps.strings.outputs.build-output-dir }}/**/cookworm-c-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}.exe
         make_latest: "true"  # Optional: Mark this release as latest
