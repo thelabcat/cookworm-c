@@ -5,6 +5,7 @@ name: CMake on multiple platforms
 on:
   push:
     branches: [ "master" ]
+    tags: [ 'v*' ]  # Or '*' for any tag; adjust as needed
   pull_request:
     branches: [ "master" ]
 
@@ -85,7 +86,16 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: cookworm-c-${{ matrix.os }}-${{ matrix.build_type }}
+        name: cookworm-c-${{ matrix.os }}-${{matrix.c_compiler}}-${{ matrix.build_type }}
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/**/cookworm-c
           ${{ steps.strings.outputs.build-output-dir }}/**/cookworm-c.exe
+
+    - name: Upload to Release
+      if: startsWith(github.ref, 'refs/tags/')  # Only run on tags
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+        ${{ steps.strings.outputs.build-output-dir }}/**/cookworm-c-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}
+        ${{ steps.strings.outputs.build-output-dir }}/**/cookworm-c-${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}.exe
+        make_latest: "true"  # Optional: Mark this release as latest
