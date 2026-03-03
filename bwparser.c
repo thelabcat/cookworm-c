@@ -33,7 +33,7 @@
 #define STR_SIZE 99
 
 const char *argp_program_version =
-"bwparser 1.0.0";
+"bwparser 1.0.0-beta";
 
 const char *argp_program_bug_address =
 "<zargulthewizard@outlook.com>";
