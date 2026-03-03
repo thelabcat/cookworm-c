@@ -23,13 +23,17 @@
 #include <string.h>
 #include <ctype.h>
 
-// Read directly from input
-#define wordlist stdin
+void parse(FILE *wordlist, FILE *output) {
+  /* Parse a compressed wordlist into plain words.
+   * Will parse words as they arrive, so stdio is accepted.
+   * Args:
+   *  FILE *wordlist: Pointer to the input file.
+   *  FILE *output: Pointer to the output.
+   */
 
-int main() {
   int copy_chars = 0;  // Characters to copy from previous word
   int copy_chars_strlen = 0;  // How long IN characters the copy characters specifier of each entry was
-  char entry[99] = "";  // Each line of the file at a time 
+  char entry[99] = "";  // Each line of the file at a time
   char word_ending[99] = "";  // The part of each entry that is the end of the new word
   char next_word[99] = "";  // Each new word as it is parsed
   char last_word[99] = "";  // Each previous parsed word
@@ -82,7 +86,7 @@ int main() {
       // Not enough characters to copy
       else if (strlen(last_word) < copy_chars) {
         fprintf(stderr, "ERROR: Entry '%s' has copy character characters requirement %d but previous entry '%s' is too short!\n",
-               entry, copy_chars, last_word);
+                entry, copy_chars, last_word);
         exit(EXIT_FAILURE);
       }
 
@@ -93,12 +97,12 @@ int main() {
         }
       }
     }
-    
+
     // Add the string part of the word entry
     strcat(next_word, word_ending);
 
     // Output
-    printf("%s\n", next_word);
+    fprintf(output, "%s\n", next_word);
 
     // Save the last word
     strcpy(last_word, next_word);
@@ -112,6 +116,9 @@ int main() {
      */
     entry[0] = '\0';
   }
-  
-  return 0;
+}
+
+
+int main() {
+  parse(stdin, stdout);
 }
