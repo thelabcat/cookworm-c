@@ -20,8 +20,30 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
+
+void printhelp() {
+  // Print the program help and exit
+  printf("Cookworm-C BookWorm Parser - Parse and unparse the BookWorm Deluxe wordlist\n"
+         "\n"
+         "Usage: bwparser [-u] [infile.txt] [outfile.txt]\n"
+         "       bwparser -h\n"
+         "\n"
+         "Options:\n"
+         "\n"
+         "  -u\tChange into unparsing mode. Defaults to parsing.\n"
+         "  infile.txt\tThe text file to read from. Defaults to stdin.\n"
+         "  outfile.txt\tThe text file to write to. Defaults to stdout.\n"
+         "\n"
+         "  -h\tInstead of operating, print this help and exit.\n"
+         "\n"
+         "S.D.G.\n"
+  );
+  exit(EXIT_SUCCESS);
+}
 
 void parse(FILE *wordlist, FILE *output) {
   /* Parse a compressed wordlist into plain words.
@@ -118,7 +140,96 @@ void parse(FILE *wordlist, FILE *output) {
   }
 }
 
+void unparse(FILE *plainwords, FILE *wordlist) {
+  /* Unparse a list of plain words into a compressed wordlest.
+   * Will unparse words as they arrive, so stdio is accepted.
+   * Args:
+   *  FILE *plainwords: Pointer to the input file.
+   *  FILE *wordlist: Pointer to the output file.
+   */
+  fprintf(stderr, "Unparse not implemented\n");
+  exit(EXIT_FAILURE);
+}
 
-int main() {
-  parse(stdin, stdout);
+int main(int argc, char *argv[]) {
+  errno = 0;
+
+  bool unparse_mode = false;
+  FILE *infile = stdin;
+  FILE *outfile = stdout;
+
+  // Parse all arguments
+  for (int i=0; i<argc; i++) {
+
+    // Skip the first option
+    if (i == 0) {
+      continue;
+    }
+
+    // Search through known flags, and lastly positional arguments
+    // unparse flag set
+    if (!strcmp(argv[i], "-u")) {
+      unparse_mode = true;
+    }
+
+    // print help and exit
+    else if (!strcmp(argv[i], "-h")) {
+      printhelp();
+    }
+
+    // not a known flag argument
+
+    // Unrecognized flag argument
+    else if (argv[i][0] == '-') {
+      fprintf(stderr, "Unrecognized option, '%s'\n", argv[i]);
+
+      // It is a lone hyphen
+      if (strlen(argv[i]) == 1) {
+        fprintf(stderr, "Did you know the program defaults to stdio?\n");
+      }
+
+      exit(EXIT_FAILURE);
+    }
+
+    // Positional arguments:
+
+    //infile is not set yet
+    else if (infile == stdin) {
+      infile = fopen(argv[i], "r");
+      if (infile == NULL) {
+        fprintf(stderr, "Could not open input file '%s', error %d:\n\t'%s'\n",
+                argv[i], errno, strerror(errno));
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    // outfile is not set yet
+    else if (outfile == stdout) {
+      outfile = fopen(argv[i], "w");
+      if (outfile == NULL) {
+        fprintf(stderr, "Could not open output file '%s', error %d:\n\t'%s'\n",
+                argv[i], errno, strerror(errno));
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    // both files are set, no recognized options
+    else {
+      fprintf(stderr, "Unrecognized positional option, '%s'\n", argv[i]);
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  // Options are set, do our thing!
+  if (!unparse_mode) {
+    parse(infile, outfile);
+  }
+  else {
+    unparse(infile, outfile);
+  }
+
+  fclose(infile);
+  fclose(outfile);
+
+  return 0;
 }
