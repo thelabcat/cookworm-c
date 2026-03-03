@@ -65,6 +65,11 @@ void parse(FILE *wordlist, FILE *output) {
   // Repeat until we reach the end of the file
   while (feof(wordlist) == 0) {
 
+    /* fgets won't write anything to the entry buffer when it reaches EOF,
+     * not even a null terminator. So, we must quick clear that.
+     */
+    entry[0] = '\0';
+
     // Read another line
     fgets(entry, STR_SIZE, wordlist);
 
@@ -94,9 +99,10 @@ void parse(FILE *wordlist, FILE *output) {
     }
 
     // Get the rest of the string
-    for (int j=copy_chars_strlen; j<strlen(entry) && entry[j] != '\n'; j++) {
+    for (int j=copy_chars_strlen; j<strlen(entry); j++) {
       word_ending[j - copy_chars_strlen] = entry[j];
     }
+    word_ending[strlen(entry) - copy_chars_strlen] = '\0';
 
     // Do character copying
     if (copy_chars != 0) {
@@ -122,6 +128,9 @@ void parse(FILE *wordlist, FILE *output) {
       }
     }
 
+    // Copy characters or not, null terminate the current word beginning
+    next_word[copy_chars] = '\0';
+
     // Add the string part of the word entry
     strcat(next_word, word_ending);
 
@@ -130,15 +139,6 @@ void parse(FILE *wordlist, FILE *output) {
 
     // Save the last word
     strcpy(last_word, next_word);
-
-    // These strings will be set by character iteration, so we must fully clear them.
-    memset(next_word, '\0', sizeof(next_word));
-    memset(word_ending, '\0', sizeof(word_ending));
-
-    /* fgets won't write anything to the entry buffer when it reaches EOF,
-     * not even a null terminator. So, we must quick clear that.
-     */
-    entry[0] = '\0';
   }
 }
 
