@@ -25,6 +25,8 @@
 #include <ctype.h>
 #include <errno.h>
 
+#define STR_SIZE 99
+
 void printhelp() {
   // Print the program help and exit
   printf("Cookworm-C BookWorm Parser - Parse and unparse the BookWorm Deluxe wordlist\n"
@@ -55,16 +57,16 @@ void parse(FILE *wordlist, FILE *output) {
 
   int copy_chars = 0;  // Characters to copy from previous word
   int copy_chars_strlen = 0;  // How long IN characters the copy characters specifier of each entry was
-  char entry[99] = "";  // Each line of the file at a time
-  char word_ending[99] = "";  // The part of each entry that is the end of the new word
-  char next_word[99] = "";  // Each new word as it is parsed
-  char last_word[99] = "";  // Each previous parsed word
+  char entry[STR_SIZE] = "";  // Each line of the file at a time
+  char word_ending[STR_SIZE] = "";  // The part of each entry that is the end of the new word
+  char next_word[STR_SIZE] = "";  // Each new word as it is parsed
+  char last_word[STR_SIZE] = "";  // Each previous parsed word
 
   // Repeat until we reach the end of the file
   while (feof(wordlist) == 0) {
 
     // Read another line
-    fgets(entry, 99, wordlist);
+    fgets(entry, STR_SIZE, wordlist);
 
     // Skip blank lines and the ending empty line
     if (entry[0] == '\r' || entry[0] == '\n' || strlen(entry) == 0) {
@@ -147,8 +149,77 @@ void unparse(FILE *plainwords, FILE *wordlist) {
    *  FILE *plainwords: Pointer to the input file.
    *  FILE *wordlist: Pointer to the output file.
    */
-  fprintf(stderr, "Unparse not implemented\n");
-  exit(EXIT_FAILURE);
+
+  int copy_chars = 0;  // Characters to copy from previous word
+  int copy_chars_strlen = 0;  // How long IN characters the copy characters specifier of each entry was
+  int last_copy_chars = 0;  // The last copy characters count
+  char word[STR_SIZE];  // Each input word
+  int word_len = 0;  // strlen(word) currently
+  char last_word[STR_SIZE] = "";  // Each previous word
+  char entry[STR_SIZE] = "";  // The next entry being built
+
+  // Repeat until we reach the end of the file
+  while (feof(plainwords) == 0) {
+    /* fgets won't write anything to the word buffer when it reaches EOF,
+     * not even a null terminator. So, we must quick clear that.
+     */
+    word[0] = '\0';
+
+    // Read another line
+    fgets(word, STR_SIZE, plainwords);
+    word_len = strlen(word);
+
+    // Skip blank lines and the ending empty line
+    if (word[0] == '\r' || word[0] == '\n' || word_len == 0) {
+      continue;
+    }
+
+    // Remove trailing newline and carriage return for lines that aren't the last
+    while (word[word_len - 1] == '\n' || word[word_len - 1] == '\r') {
+      word[word_len - 1] = '\0';
+      word_len--;
+    }
+
+    // If this is the first word, write it and go on
+    if (last_word[0] == '\0') {
+      fprintf(wordlist, "%s\r\n", word);
+      strcpy(last_word, word);
+      continue;
+    }
+
+    // Find how many characters match the previous word
+    for (int i=0; i<strlen(last_word); i++) {
+      if (last_word[i] == word[i]) {
+        copy_chars = i + 1;
+      }
+      else {
+        break;
+      }
+    }
+
+    // The copy characters are different
+    if (copy_chars != last_copy_chars) {
+      snprintf(entry, STR_SIZE, "%d", copy_chars);
+      copy_chars_strlen = strlen(entry);
+    }
+    // They are not different
+    else {
+      copy_chars_strlen = 0;
+    }
+
+    // Note the non-copied characters
+    for (int i=copy_chars; i<word_len; i++) {
+      entry[i - copy_chars + copy_chars_strlen] = word[i];
+    }
+    entry[word_len - copy_chars + copy_chars_strlen] = '\0';
+
+    fprintf(wordlist, "%s\r\n", entry);
+
+    // Store stuff for next time, and reset
+    last_copy_chars = copy_chars;
+    copy_chars = 0;
+    strcpy(last_word, word);
+  }
 }
 
 int main(int argc, char *argv[]) {
