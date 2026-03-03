@@ -47,6 +47,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Get submodules
+      run: git submodule update --init --recursive
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
@@ -66,8 +69,6 @@ jobs:
 
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      with:
-        submodules: recursive
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
     - name: Test
